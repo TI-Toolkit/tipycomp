@@ -32,6 +32,12 @@
 #define MICROPY_PERSISTENT_CODE_LOAD (1)
 #define MICROPY_PERSISTENT_CODE_SAVE (1)
 
+// The version we have here predates Apple Silicon (arm64) and otherwise selects
+// an unsupported native NLR implementation before falling back to setjmp.
+#if defined(__APPLE__) && defined(__aarch64__)
+#define MICROPY_NLR_SETJMP (1)
+#endif
+
 #define MICROPY_EMIT_X64            (0)
 #define MICROPY_EMIT_X86            (0)
 #define MICROPY_EMIT_THUMB          (0)

@@ -13,6 +13,8 @@
 
 include ../circuitpython/py/mkenv.mk
 
+PYTHON = python3
+
 # define main target
 PROG = mpy-disasm
 
@@ -32,8 +34,16 @@ INC += -I$(BUILD)
 # compiler settings
 CWARN = -Wall -Werror
 CWARN += -Wpointer-arith -Wuninitialized
+$(PY_BUILD)/vm.o: CWARN += -Wno-error=array-bounds
+
 CFLAGS = $(INC) $(CWARN) -std=gnu99 $(CFLAGS_MOD) $(COPT) $(CFLAGS_EXTRA)
 CFLAGS += -fdata-sections -ffunction-sections -fno-asynchronous-unwind-tables
+
+# MicroPython 1.9.3 only enables its POSIX persistent-code file helpers when
+# __unix__ is defined; clang on macOS does not define it.
+ifeq ($(UNAME_S),Darwin)
+CFLAGS += -D__unix__
+endif
 
 # Debugging/Optimization
 ifdef DEBUG
