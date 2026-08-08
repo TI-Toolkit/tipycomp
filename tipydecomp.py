@@ -54,9 +54,13 @@ def split_payload(data):
     return data[start:end - 1], mpy_data
 
 
-def dump_menu(data):
+def dump_menu(data, outfile=None):
     menu, _ = split_payload(data)
-    print(str(menu, encoding="utf8"))
+    if outfile:
+        with open(outfile, "wb") as output:
+            output.write(menu)
+    else:
+        print(str(menu, encoding="utf8"))
 
 
 def disasm(data, temp_dir):
@@ -67,10 +71,13 @@ def disasm(data, temp_dir):
     subprocess.run([DISASSEMBLER, mpy_filename], check=True)
 
 
-def main(mode, infile):
-    if mode not in ("menu", "disasm"):
-        print("Invalid mode " + mode)
-        print('Use "menu" or "disasm"')
+def main(mode, infile, outfile=None):
+    valid = (mode == "menu" or
+             (mode == "disasm" and outfile is None) or
+             (mode == "extract" and outfile is not None))
+    if not valid:
+        print("Invalid arguments")
+        print("Use 'menu' or 'disasm' with an input file, or 'extract' with input and output files")
         return 1
 
     temp_dir = tempfile.TemporaryDirectory(prefix="tipycomp_")
@@ -85,15 +92,20 @@ def main(mode, infile):
         data = bin_file.read()
 
     if mode == "menu":
-        dump_menu(data)
-    else:
+        dump_menu(data, outfile)
+    elif mode == "disasm":
         disasm(data, temp_dir.name)
+    else:
+        _, mpy_data = split_payload(data)
+        with open(outfile, "wb") as output:
+            output.write(mpy_data)
     return 0
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: " + __file__ + " (menu|disasm) infile")
+    if len(sys.argv) not in (3, 4):
+        print("Usage: " + __file__ + " (menu|disasm) infile [outfile.menu]")
+        print("       " + __file__ + " extract infile outfile.mpy")
         sys.exit(1)
     try:
         sys.exit(main(*sys.argv[1:]))
