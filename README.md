@@ -24,14 +24,19 @@ To use the module, send it to the calculator using TI-Connect CE. In the Python 
 
 #### tipydecomp
 ```
-python tipydecomp.py menu infile.8xv
+python tipydecomp.py menu infile.8xv [outfile.menu]
 ```
-to dump the menu definitions of `infile.8xv`.
+to dump the menu definitions of `infile.8xv`, or write the exact menu bytes to `outfile.menu`.
 
 ```
 python tipydecomp.py disasm infile.8xv
 ```
 to disassemble the MicroPython bytecode of `infile.8xv`.
+
+```
+python tipydecomp.py extract infile.8xv outfile.mpy
+```
+to extract the original version-3 `.mpy` payload.
 
 ### Menu file format
 The menu definitions file is a plain text file containing the menu structure for the module. It consists of a series of directives, one per line. All official TI modules use Unix-style line endings, although Windows-style line endings also appear to work.

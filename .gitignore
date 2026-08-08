@@ -142,3 +142,5 @@ cython_debug/
 
 # output
 **/*.8xv
+/mpy-disasm/mpy-disasm
+/mpy-disasm/mpy-disasm.map

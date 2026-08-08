@@ -26,9 +26,24 @@ STATIC void stderr_print_strn(void *env, const char *str, mp_uint_t len) {
 STATIC const mp_print_t mp_stderr_print = {NULL, stderr_print_strn};
 
 STATIC void recursive_disassemble(const mp_raw_code_t *rc) {
+    if (rc->kind != MP_CODE_BYTECODE) {
+        return;
+    }
+
     mp_bytecode_print(rc, rc->data.u_byte.bytecode, rc->data.u_byte.bc_len, rc->data.u_byte.const_table);
+
+    // Constant table: positional + keyword-only argument names, then objects, then nested raw-code pointers.
+    // We have to skip more than just objects, so we don't interpret a function containing a lambda or nested function as a pointer
+    const byte *prelude = rc->data.u_byte.bytecode;
+    mp_decode_uint(&prelude); // n_state
+    mp_decode_uint(&prelude); // n_exc_stack
+    prelude++; // scope_flags
+    const size_t n_pos_args = *prelude++;
+    const size_t n_kwonly_args = *prelude++;
+    const size_t raw_code_offset = n_pos_args + n_kwonly_args + rc->data.u_byte.n_obj;
+
     for(size_t i = 0; i < rc->data.u_byte.n_raw_code; i++) {
-        const mp_raw_code_t *nrc = (const mp_raw_code_t*)rc->data.u_byte.const_table[rc->data.u_byte.n_obj + i];
+        const mp_raw_code_t *nrc = (const mp_raw_code_t*)rc->data.u_byte.const_table[raw_code_offset + i];
         recursive_disassemble(nrc);
     }
 }
