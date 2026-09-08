@@ -13,45 +13,43 @@ class FormatError(ValueError):
     pass
 
 
-def get_menu_pos(data):
-    if not data.startswith(b"PYMP"):
-        raise FormatError("payload does not start with PYMP")
-
+def read_record_length(data, index):
     length = 0
-    index = 4
-    shift = 0
-    while True:
+    for shift in range(0, 35, 7):
         if index >= len(data):
-            raise FormatError("truncated menu length")
+            raise FormatError("truncated record length or missing record-stream terminator")
         byte = data[index]
+        if shift == 28 and byte & 0xf0:
+            raise FormatError("record length is too large")
         length |= (byte & 0x7f) << shift
         index += 1
-        shift += 7
         if byte & 0x80 == 0:
-            break
-        if shift >= 35:
-            raise FormatError("menu length is too large")
-
-    if index >= len(data):
-        raise FormatError("missing PYMP format version")
-    if data[index] != 2:
-        raise FormatError("unsupported PYMP format version {}".format(data[index]))
-
-    start = index + 1
-    end = start + length
-    if end > len(data):
-        raise FormatError("menu extends beyond the payload")
-    if length == 0 or data[end - 1] != 0:
-        raise FormatError("menu is not NUL-terminated")
-    return start, end
+            return length, index
 
 
 def split_payload(data):
-    start, end = get_menu_pos(data)
-    mpy_data = data[end:]
+    if not data.startswith(b"PYMP"):
+        raise FormatError("payload does not start with PYMP")
+
+    menus = []
+    index = 4
+    while True:
+        length, index = read_record_length(data, index)
+        if length == 0:
+            break
+        end = index + length
+        if end > len(data):
+            raise FormatError("record extends beyond the payload")
+        # PYMP uses the same record stream as PYCD/PYSC. Length includes
+        # the record ID: 1 is a filename, 2 is menu definitions.
+        if data[index] == 2:
+            menus.append(data[index + 1:end])
+        index = end
+
+    mpy_data = data[index:]
     if len(mpy_data) < 4 or mpy_data[0] != ord("M"):
         raise FormatError("payload does not contain .mpy bytecode")
-    return data[start:end - 1], mpy_data
+    return b"".join(menus), mpy_data
 
 
 def dump_menu(data, outfile=None):

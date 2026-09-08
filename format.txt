@@ -1,8 +1,16 @@
 Magic bytes: 50594D50 ("PYMP")
-vuint of menu definitions length
-02 - Probably a version number
-Menu definitions
-  Null terminated string
+Metadata record stream (same framing as PYCD and PYSC):
+  Each record begins with a ULEB128 length, including its one-byte record ID
+  but excluding the length itself. The remaining length - 1 bytes are data.
+  Record IDs:
+    01 - Filename
+    02 - Menu definitions
+    Other IDs can be skipped using the record length.
+  A zero-length record (00) terminates the stream. The .mpy payload follows.
+  PYMP 00 followed by .mpy bytecode is an ordinary empty record stream.
+
+Menu definitions (record ID 02)
+  Length-delimited text; the record-stream terminator is not part of the menu.
   Consists of a list of directives, each ending with a newline
   Directives:
     #MENULABEL (text to show in modules menu)
@@ -120,4 +128,6 @@ Menu definitions
     <@GRAY@>
     <@WHITE@>
   Invalid characters of this format will cause a freeze
-A .mpy file, version 03 (micropython 1.9.3)
+
+Compiled payload after the zero-length record:
+  A .mpy file, version 03 (micropython 1.9.3)

@@ -27,6 +27,7 @@ To use the module, send it to the calculator using TI-Connect CE. In the Python 
 python tipydecomp.py menu infile.8xv [outfile.menu]
 ```
 to dump the menu definitions of `infile.8xv`, or write the exact menu bytes to `outfile.menu`.
+All menu-definition records are concatenated in stream order without adding separators. Filename and unknown records are skipped; an empty record stream produces an empty menu.
 
 ```
 python tipydecomp.py disasm infile.8xv
